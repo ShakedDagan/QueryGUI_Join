@@ -15,6 +15,25 @@ class App:
         self.tree = ttk.Treeview(self.frame, columns=(1, 2, 3, 4, 5, 6, 7), \
                                  height=20, show="headings")
 
+        self.m = Menu(self.root, tearoff=0)
+        self.m.add_command(label="Copy Cell")
+        self.m.add_command(label="Edit Cell")
+        self.m.add_separator()
+        self.m.add_command(label="Add Row")
+        self.m.add_command(label="Copy Row")
+        self.m.add_command(label="Delete Row", command=lambda: print("Delete Row"))
+
+        self.menu = Menu(self.root, tearoff=1)
+
+        self.fileMenu = Menu(self.menu, tearoff=0)
+        self.menu.add_cascade(label="File", menu=self.fileMenu)
+        self.fileMenu.add_command(label="Exit", command=lambda: exit("Exit Button through File"))
+
+        self.menu.add_separator()
+        self.menu.add_command(label="Exit", command=lambda: exit("Exit Button"))
+
+
+
         vsb = ttk.Scrollbar(self.frame, orient="vertical", command=self.tree.yview)
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
@@ -26,6 +45,7 @@ class App:
         #self.tree.bind("<Double-1>", self.on_double_click)
         self.lastClick = None
         self.tree.bind("<Button-1>", self.on_double_click)
+        self.tree.bind('<Button-3>', self.on_right_click)
 
         self.tree.pack(side='top')
 
@@ -41,7 +61,23 @@ class App:
             self.tree.column(i, width=150)
 
         db(self.tree)
+        self.root.config(menu=self.menu)
         self.root.mainloop()
+
+    def do_popup(self, event):
+        try:
+            self.m.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.m.grab_release()
+
+    def on_right_click(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        print(f'right click : {region}')
+        if region == "cell":
+            print(self.tree.identify_row(event.y))
+            self.do_popup(event)
+        elif region == "heading":
+            print(self.tree.heading(self.tree.identify_column(event.x))['text'])
 
     def on_double_click(self, event):
         region = self.tree.identify("region", event.x, event.y)
