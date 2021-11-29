@@ -12,6 +12,7 @@ class App:
         self.root.wm_attributes("-topmost", 1)
         self.frame = Frame(self.root)
         self.frame.pack()
+
         self.tree = ttk.Treeview(self.frame, columns=(1, 2, 3, 4, 5, 6, 7), \
                                  height=20, show="headings")
 
