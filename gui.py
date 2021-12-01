@@ -3,40 +3,66 @@ from tkinter import *
 from tkinter import ttk
 
 
+
 class App:
     def __init__(self):
         print()
         self.root = Tk()
-        self.root.geometry("1000x500")
+        self.root.geometry("1000x550")
         self.root.title("SQL join query")
-        self.root.wm_attributes("-topmost", 1)
+        # self.root.wm_attributes("-topmost", 1)
 
         self.leftFrame = Frame(self.root)
         self.leftFrame.pack(side="left")
+
+        self.var = StringVar()
+        self.label_query = Label(self.root, textvariable=self.var, wraplength=450, font=("Arial", 11), pady=10)
+        self.var.set("Query")
+        self.label_query.pack()
+
         self.tables = []
         self.db()
         self.relation = self.dictRelationshipTables()
         self.lb1 = Listbox(self.leftFrame, exportselection=0)
         for i in range(0, len(self.tables)):
             self.lb1.insert(i, self.tables[i])
-        self.lb1.pack(side="left")
+        #self.lb1.pack(side="left")
+        self.lb1.grid(row=1, column=0)
 
         self.lb2 = Listbox(self.leftFrame, exportselection=0)
-        self.lb2.pack(side="left")
+        self.lb2.grid(row=1, column=1)
 
         self.lb3 = Listbox(self.leftFrame, exportselection=0)
-        self.lb3.pack(side="left")
+        self.lb3.grid(row=1, column=2)
 
-        self.rightFrame = Frame(self.root)
+        self.rightFrame = Frame(self.root, width= 500, height= 500)
         self.rightFrame.pack(side="right")
-        self.tree = ttk.Treeview(self.rightFrame, columns=(1, 2, 3, 4, 5, 6, 7), \
+        self.tree = ttk.Treeview(self.rightFrame, columns=(1,2,3), \
                                  height=20, show="headings")
+
+        self.label_table1 = Label(self.leftFrame, text="Table 1", font=("Arial", 11))
+        self.label_table1.grid(row=0, column=0)
+
+        self.label_table2 = Label(self.leftFrame, text="Table 2", font=("Arial", 11))
+        self.label_table2.grid(row=0, column=1)
+
+        self.label_table3 = Label(self.leftFrame, text="Table 3", font=("Arial", 11))
+        self.label_table3.grid(row=0, column=2)
 
         self.lb1.bind('<<ListboxSelect>>', self.clickListbox1)
         self.lb2.bind('<<ListboxSelect>>', self.clickListbox2)
         self.lb3.bind('<<ListboxSelect>>', self.clickListbox3)
         self.value = [None, None, None]
-        self.tree.pack(side='top', padx=30)
+
+        vsb = ttk.Scrollbar(self.rightFrame, orient="vertical", command=self.tree.yview)
+        vsb.pack(side='right', fill='y')
+        self.tree.configure(yscrollcommand=vsb.set)
+
+        self.tree.pack(padx=30, fill='y')
+
+        vsbX = ttk.Scrollbar(self.rightFrame, orient="horizontal", command=self.tree.xview)
+        vsbX.pack(side='bottom', fill='x')
+        self.tree.configure(xscrollcommand=vsbX.set)
 
         print(self.relation)
         self.root.mainloop()
@@ -51,10 +77,8 @@ class App:
         for table in self.tables:
             rows = self.mycursor.execute("PRAGMA foreign_key_list({})".format(self.sql_identifier(table)))
             for row in rows.fetchall():
-                #print(f'Table: {row[2]}, Field: {row[3]}')
                 relation[row[2]][table] = row[3]
                 relation[table][row[2]] = row[3]
-            #print("\n")
         return relation
 
 
@@ -112,14 +136,22 @@ class App:
                 where_query += ' AND '
             select_query += f', {tables[i+1]}'
             where_query += f'{tables[i]}.{self.relation[tables[i]][tables[i+1]]} = {tables[i+1]}.{self.relation[tables[i+1]][tables[i]]}'
-        #print(where_query)
         if numOfTables == 1:
             where_query = ''
         query = select_query + where_query
         print(query)
-        mycursor.execute(query)
-        for row in mycursor:
-            tree.insert('', 'end', values=row[0:10])
+        data = mycursor.execute(query)
+        param = [i for i in range(1, len(data.description)+1)]
+        tree.configure(columns=param)
+        self.var.set(query)
+        for index, column in enumerate(data.description):
+            tree.heading(index+1, text=column[0])
+            tree.column(index+1, width=100, stretch=YES)
+
+        for row in data:
+            tree.insert('', 'end', values=row)
+
+
 
 
 def treeview_sort_column(tv, col, reverse):
