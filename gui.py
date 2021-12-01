@@ -23,17 +23,47 @@ class App:
         self.tables = []
         self.db()
         self.relation = self.dictRelationshipTables()
-        self.lb1 = Listbox(self.leftFrame, exportselection=0)
+
+        self.statistics = StringVar()
+        self.statistics.set('Number of Columns: 0\nNumber of Rows: 0')
+        self.label_statistics = Label(self.leftFrame,
+                                      textvariable=self.statistics, pady=20, anchor="w")
+        self.label_statistics.grid(row=2, column=1)
+
+        self.join_columns = StringVar()
+        self.join_columns.set('Join Columns: ')
+        self.join_columns = Label(self.leftFrame,
+                                  textvariable=self.join_columns, anchor="w")
+        self.join_columns.grid(row=3, column=1)
+
+        self.lb1_frame = Frame(self.leftFrame)
+        self.lb1_frame.grid(row=1, column=0)
+        self.lb1 = Listbox(self.lb1_frame, exportselection=0)
         for i in range(0, len(self.tables)):
             self.lb1.insert(i, self.tables[i])
-        #self.lb1.pack(side="left")
-        self.lb1.grid(row=1, column=0)
+        self.lb1.pack(side='left')
 
-        self.lb2 = Listbox(self.leftFrame, exportselection=0)
-        self.lb2.grid(row=1, column=1)
+        self.lb2_frame = Frame(self.leftFrame)
+        self.lb2_frame.grid(row=1, column=1)
+        self.lb2 = Listbox(self.lb2_frame, exportselection=0)
+        self.lb2.pack(side='left')
 
-        self.lb3 = Listbox(self.leftFrame, exportselection=0)
-        self.lb3.grid(row=1, column=2)
+        self.lb3_frame = Frame(self.leftFrame)
+        self.lb3_frame.grid(row=1, column=2)
+        self.lb3 = Listbox(self.lb3_frame, exportselection=0)
+        self.lb3.pack(side='left')
+
+        vsb_lb1 = ttk.Scrollbar(self.lb1_frame, orient="vertical", command=self.lb1.yview)
+        vsb_lb1.pack(side='right', fill='y')
+        self.lb1.config(yscrollcommand=vsb_lb1.set)
+
+        vsb_lb2 = ttk.Scrollbar(self.lb2_frame, orient="vertical", command=self.lb2.yview)
+        vsb_lb2.pack(side='right', fill='y')
+        self.lb2.config(yscrollcommand=vsb_lb2.set)
+
+        vsb_lb3 = ttk.Scrollbar(self.lb3_frame, orient="vertical", command=self.lb3.yview)
+        vsb_lb3.pack(side='right', fill='y')
+        self.lb3.config(yscrollcommand=vsb_lb3.set)
 
         self.rightFrame = Frame(self.root, width= 500, height= 500)
         self.rightFrame.pack(side="right")
@@ -143,6 +173,8 @@ class App:
         query = select_query + where_query
         print(query)
         data = mycursor.execute(query)
+        rows = mycursor.fetchall()
+        rows_num = len(rows)
         param = [i for i in range(1, len(data.description)+1)]
         tree.configure(columns=param)
         self.var.set(query)
@@ -150,8 +182,10 @@ class App:
             tree.heading(index+1, text=column[0])
             tree.column(index+1, width=100, stretch=YES)
         #tree.heading(0, command=lambda: treeview_sort_column(self.tree, data.description[0][0], False))
-        for row in data:
+        for row in rows:
             tree.insert('', 'end', values=row)
+
+        self.statistics.set(f'Number of Columns: {len(data.description)}\nNumber of Rows: {rows_num}')
 
 
 
