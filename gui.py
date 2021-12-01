@@ -76,8 +76,10 @@ class App:
                 self.tables.append(table[0])
         for table in self.tables:
             rows = self.mycursor.execute("PRAGMA foreign_key_list({})".format(self.sql_identifier(table)))
+            print(table)
             for row in rows.fetchall():
-                relation[row[2]][table] = row[3]
+                print(row)
+                relation[row[2]][table] = row[4]
                 relation[table][row[2]] = row[3]
         return relation
 
@@ -147,7 +149,7 @@ class App:
         for index, column in enumerate(data.description):
             tree.heading(index+1, text=column[0])
             tree.column(index+1, width=100, stretch=YES)
-
+        #tree.heading(0, command=lambda: treeview_sort_column(self.tree, data.description[0][0], False))
         for row in data:
             tree.insert('', 'end', values=row)
 
