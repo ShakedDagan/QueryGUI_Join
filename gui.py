@@ -10,13 +10,25 @@ class App:
         self.root = Tk()
         self.root.geometry("1000x550")
         self.root.title("SQL join query")
+        self.root.resizable(0, 0)
         # self.root.wm_attributes("-topmost", 1)
 
         self.leftFrame = Frame(self.root)
         self.leftFrame.pack(side="left")
 
+        # self.leftFrame.rowconfigure(0, weight=1)
+        # self.leftFrame.rowconfigure(1, weight=1)
+        # self.leftFrame.rowconfigure(2, weight=1)
+        # self.leftFrame.rowconfigure(3, weight=3)
+
+        self.rightFrame = Frame(self.root, width=500, height=500)
+        self.rightFrame.pack(side="right")
+
+        self.frame_query = Frame(self.rightFrame)
+        self.frame_query.pack(side='top')
+
         self.var = StringVar()
-        self.label_query = Label(self.root, textvariable=self.var, wraplength=450, font=("Arial", 11), pady=10)
+        self.label_query = Label(self.frame_query, textvariable=self.var, wraplength=450, font=("Arial", 11), pady=10, height=4)
         self.var.set("Query")
         self.label_query.pack()
 
@@ -27,29 +39,29 @@ class App:
         self.statistics = StringVar()
         self.statistics.set('Number of Columns: 0\nNumber of Rows: 0')
         self.label_statistics = Label(self.leftFrame,
-                                      textvariable=self.statistics, pady=20, anchor="w")
+                                      textvariable=self.statistics, pady=20, anchor="w", wraplength=250)
         self.label_statistics.grid(row=2, column=1, sticky='w')
 
         self.join_columns = StringVar()
-        self.join_columns.set('Join Columns: ')
+        self.join_columns.set('Join Columns:\tNone')
         self.join_columns_label = Label(self.leftFrame,
-                                        textvariable=self.join_columns, anchor="w")
-        self.join_columns_label.grid(row=3, column=1, sticky='w', columnspan=2, rowspan=6)
+                                        textvariable=self.join_columns, anchor='n', height=6)
+        self.join_columns_label.grid(row=3, column=0, columnspan=3, rowspan=1, sticky="nswe")
 
         self.lb1_frame = Frame(self.leftFrame)
-        self.lb1_frame.grid(row=1, column=0)
+        self.lb1_frame.grid(row=1, column=0, padx=10)
         self.lb1 = Listbox(self.lb1_frame, exportselection=0)
         for i in range(0, len(self.tables)):
             self.lb1.insert(i, self.tables[i])
         self.lb1.pack(side='left')
 
         self.lb2_frame = Frame(self.leftFrame)
-        self.lb2_frame.grid(row=1, column=1)
+        self.lb2_frame.grid(row=1, column=1, padx=10)
         self.lb2 = Listbox(self.lb2_frame, exportselection=0)
         self.lb2.pack(side='left')
 
         self.lb3_frame = Frame(self.leftFrame)
-        self.lb3_frame.grid(row=1, column=2)
+        self.lb3_frame.grid(row=1, column=2, padx=10, sticky="nswe")
         self.lb3 = Listbox(self.lb3_frame, exportselection=0)
         self.lb3.pack(side='left')
 
@@ -65,8 +77,6 @@ class App:
         vsb_lb3.pack(side='right', fill='y')
         self.lb3.config(yscrollcommand=vsb_lb3.set)
 
-        self.rightFrame = Frame(self.root, width=500, height=500)
-        self.rightFrame.pack(side="right")
         self.tree = ttk.Treeview(self.rightFrame, columns=(1, 2, 3), height=20, show="headings")
 
         self.label_table1 = Label(self.leftFrame, text="Table 1", font=("Arial", 11))
@@ -173,7 +183,7 @@ class App:
             where_query += f'{tables[i]}.{self.relation[tables[i]][tables[i+1]]} = {tables[i+1]}.{self.relation[tables[i+1]][tables[i]]}'
         if numOfTables == 1:
             where_query = ''
-            join_column = 'None'
+            join_column = 'Join Columns:\tNone'
         self.join_columns.set(join_column)
         query = select_query + where_query
         print(query)
@@ -185,7 +195,7 @@ class App:
         tree.configure(columns=param)
         self.var.set(query)
 
-        for index, column in enumerate(list(dict.fromkeys(data.description))):
+        for index, column in enumerate(data.description):
             print(f'index: {index}   column: {column}')
             tree.heading(index+1, text=column[0])
             tree.column(index+1, width=100, stretch=YES)
