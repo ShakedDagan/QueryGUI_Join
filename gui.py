@@ -28,13 +28,13 @@ class App:
         self.statistics.set('Number of Columns: 0\nNumber of Rows: 0')
         self.label_statistics = Label(self.leftFrame,
                                       textvariable=self.statistics, pady=20, anchor="w")
-        self.label_statistics.grid(row=2, column=1)
+        self.label_statistics.grid(row=2, column=1, sticky='w')
 
         self.join_columns = StringVar()
         self.join_columns.set('Join Columns: ')
-        self.join_columns = Label(self.leftFrame,
-                                  textvariable=self.join_columns, anchor="w")
-        self.join_columns.grid(row=3, column=1)
+        self.join_columns_label = Label(self.leftFrame,
+                                        textvariable=self.join_columns, anchor="w")
+        self.join_columns_label.grid(row=3, column=1, sticky='w', columnspan=2, rowspan=6)
 
         self.lb1_frame = Frame(self.leftFrame)
         self.lb1_frame.grid(row=1, column=0)
@@ -65,10 +65,9 @@ class App:
         vsb_lb3.pack(side='right', fill='y')
         self.lb3.config(yscrollcommand=vsb_lb3.set)
 
-        self.rightFrame = Frame(self.root, width= 500, height= 500)
+        self.rightFrame = Frame(self.root, width=500, height=500)
         self.rightFrame.pack(side="right")
-        self.tree = ttk.Treeview(self.rightFrame, columns=(1,2,3), \
-                                 height=20, show="headings")
+        self.tree = ttk.Treeview(self.rightFrame, columns=(1, 2, 3), height=20, show="headings")
 
         self.label_table1 = Label(self.leftFrame, text="Table 1", font=("Arial", 11))
         self.label_table1.grid(row=0, column=0)
@@ -79,6 +78,8 @@ class App:
         self.label_table3 = Label(self.leftFrame, text="Table 3", font=("Arial", 11))
         self.label_table3.grid(row=0, column=2)
 
+        self.lastClick = '#1'
+        self.tree.bind("<Button-1>", self.on_click)
         self.lb1.bind('<<ListboxSelect>>', self.clickListbox1)
         self.lb2.bind('<<ListboxSelect>>', self.clickListbox2)
         self.lb3.bind('<<ListboxSelect>>', self.clickListbox3)
@@ -90,9 +91,9 @@ class App:
 
         self.tree.pack(padx=30, fill='y')
 
-        vsbX = ttk.Scrollbar(self.rightFrame, orient="horizontal", command=self.tree.xview)
-        vsbX.pack(side='bottom', fill='x')
-        self.tree.configure(xscrollcommand=vsbX.set)
+        hsb = ttk.Scrollbar(self.rightFrame, orient="horizontal", command=self.tree.xview)
+        hsb.pack(side='bottom', fill='x')
+        self.tree.configure(xscrollcommand=hsb.set)
 
         print(self.relation)
         self.root.mainloop()
@@ -157,36 +158,53 @@ class App:
         self.conn = sqlite3.connect('chinook.db')
         self.mycursor = self.conn.cursor()
 
-
     def data(self, conn, mycursor, tree, tables, numOfTables):
         for x in tree.get_children():
             tree.delete(x)
         select_query = f'SELECT *  FROM {tables[0]}'
         where_query = f' WHERE '
+        join_column = ''
         for i in range(numOfTables-1):
             if i > 0:
                 where_query += ' AND '
+            join_column += f'Keys:\tTable: {tables[i]}     Column: {self.relation[tables[i]][tables[i+1]]}' \
+                           f'\n\tTable: {tables[i+1]}     Column: {self.relation[tables[i+1]][tables[i]]}\n\n'
             select_query += f', {tables[i+1]}'
             where_query += f'{tables[i]}.{self.relation[tables[i]][tables[i+1]]} = {tables[i+1]}.{self.relation[tables[i+1]][tables[i]]}'
         if numOfTables == 1:
             where_query = ''
+            join_column = 'None'
+        self.join_columns.set(join_column)
         query = select_query + where_query
         print(query)
         data = mycursor.execute(query)
         rows = mycursor.fetchall()
         rows_num = len(rows)
         param = [i for i in range(1, len(data.description)+1)]
+        print(param)
         tree.configure(columns=param)
         self.var.set(query)
-        for index, column in enumerate(data.description):
+
+        for index, column in enumerate(list(dict.fromkeys(data.description))):
+            print(f'index: {index}   column: {column}')
             tree.heading(index+1, text=column[0])
             tree.column(index+1, width=100, stretch=YES)
-        #tree.heading(0, command=lambda: treeview_sort_column(self.tree, data.description[0][0], False))
+
         for row in rows:
             tree.insert('', 'end', values=row)
 
+        treeview_sort_column(tree, 0, False)
         self.statistics.set(f'Number of Columns: {len(data.description)}\nNumber of Rows: {rows_num}')
 
+    def on_click(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        print(f'click : {region}')
+        print(self.tree.identify_column(event.x))
+        if region == "heading":
+            col = self.tree.identify_column(event.x)
+            if self.lastClick is None or self.lastClick != col:
+                self.tree.heading(col, command=lambda: treeview_sort_column(self.tree, col, False))
+                self.lastClick = col
 
 
 
@@ -204,6 +222,5 @@ def treeview_sort_column(tv, col, reverse):
 
     # reverse sort next time
     tv.heading(col, command=lambda: treeview_sort_column(tv, col, not reverse))
-
 
 app = App()
