@@ -143,7 +143,7 @@ class App:
         self.value[2] = None
         query = create_query(self.value, 1, self.relation,self.join_columns)
         self.var.set(query)
-        self.statistics.set(data(self.mycursor, query, self.tree, self.var))
+        self.statistics.set(data(self.mycursor, query, self.tree))
         self.updateListbox(2, self.relation[self.value[0]])
         self.updateListbox(3, [])
 
@@ -157,7 +157,7 @@ class App:
         self.value[2] = None
         query = create_query(self.value, 2, self.relation, self.join_columns)
         self.var.set(query)
-        self.statistics.set(data(self.mycursor, query, self.tree, self.var))
+        self.statistics.set(data(self.mycursor, query, self.tree))
         self.updateListbox(3, self.relation[self.value[1]])
 
     def clickListbox3(self, event):
@@ -169,7 +169,7 @@ class App:
         self.value[2] = w.get(index)
         query = create_query(self.value, 3, self.relation, self.join_columns)
         self.var.set(query)
-        self.statistics.set(data(self.mycursor, query, self.tree, self.var))
+        self.statistics.set(data(self.mycursor, query, self.tree))
 
     def updateListbox(self, num, dict_tables):
         """Updating new items in listbox according to the ones who got clicked
