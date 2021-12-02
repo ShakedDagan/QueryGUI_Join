@@ -11,8 +11,20 @@ class App:
 
     Methods
     -------
-    says(sound=None)
-        Prints the animals name and what sound it makes
+    clickListbox1(event)
+        handler for marking value from listbox 1
+
+    clickListbox2(event)
+        handler for marking value from listbox 2
+
+    clickListbox3(event)
+        handler for marking value from listbox 3
+
+    updateListbox(num, dict_tables)
+        updating new items in listbox according to the ones who got clicked
+
+    on_click(event)
+        mouse click event handler, sorting the column in treeview whenever clicked
     """
 
     def __init__(self):
@@ -24,8 +36,7 @@ class App:
         # self.root.wm_attributes("-topmost", 1)
 
         tables = []  # array for holding all table names
-        self.conn = None
-        self.mycursor = self.db('chinook.db')  # function to connect to the database
+        self.mycursor = db('chinook.db')  # function to connect to the database
         self.relation = dictRelationshipTables(self.mycursor,
                                                tables)  # analyze the database with all the relations (keys,tables)
 
@@ -130,7 +141,9 @@ class App:
         self.value[0] = w.get(index)
         self.value[1] = None
         self.value[2] = None
-        self.data(self.mycursor, self.tree, self.value, 1)
+        query = create_query(self.value, 1, self.relation,self.join_columns)
+        self.var.set(query)
+        self.statistics.set(data(self.mycursor, query, self.tree, self.var))
         self.updateListbox(2, self.relation[self.value[0]])
         self.updateListbox(3, [])
 
@@ -142,7 +155,9 @@ class App:
         index = int(w.curselection()[0])
         self.value[1] = w.get(index)
         self.value[2] = None
-        self.data(self.mycursor, self.tree, self.value, 2)
+        query = create_query(self.value, 2, self.relation, self.join_columns)
+        self.var.set(query)
+        self.statistics.set(data(self.mycursor, query, self.tree, self.var))
         self.updateListbox(3, self.relation[self.value[1]])
 
     def clickListbox3(self, event):
@@ -152,7 +167,9 @@ class App:
         w = event.widget
         index = int(w.curselection()[0])
         self.value[2] = w.get(index)
-        self.data(self.mycursor, self.tree, self.value, 3)
+        query = create_query(self.value, 3, self.relation, self.join_columns)
+        self.var.set(query)
+        self.statistics.set(data(self.mycursor, query, self.tree, self.var))
 
     def updateListbox(self, num, dict_tables):
         """Updating new items in listbox according to the ones who got clicked
@@ -172,47 +189,6 @@ class App:
             if key not in self.value:
                 lb[num - 1].insert(index, key)
 
-    def db(self, db):
-        """Gets db string location  Returns cursor pointing to the database"""
-        self.conn = sqlite3.connect(db)
-        return self.conn.cursor()
-
-    def data(self, mycursor, tree, tables, num_of_tables):
-        for x in tree.get_children():
-            tree.delete(x)
-        select_query = f'SELECT *  FROM {tables[0]}'
-        where_query = f' WHERE '
-        join_column = ''
-        for i in range(num_of_tables - 1):
-            if i > 0:
-                where_query += ' AND '
-            join_column += f'Keys:\tTable: {tables[i]}     Column: {self.relation[tables[i]][tables[i + 1]]}' \
-                           f'\n\tTable: {tables[i + 1]}     Column: {self.relation[tables[i + 1]][tables[i]]}\n\n'
-            select_query += f', {tables[i + 1]}'
-            where_query += f'{tables[i]}.{self.relation[tables[i]][tables[i + 1]]} = {tables[i + 1]}.{self.relation[tables[i + 1]][tables[i]]}'
-        if num_of_tables == 1:
-            where_query = ''
-            join_column = 'Join Columns:\tNone'
-        self.join_columns.set(join_column)
-        query = select_query + where_query
-
-        data = mycursor.execute(query)
-        rows = mycursor.fetchall()
-        rows_num = len(rows)
-        param = [i for i in range(1, len(data.description) + 1)]
-        tree.configure(columns=param)
-        self.var.set(query)
-
-        for index, column in enumerate(data.description):
-            tree.heading(index + 1, text=column[0])
-            tree.column(index + 1, width=88, stretch=NO)
-
-        for row in rows:
-            tree.insert('', 'end', values=row)
-
-        treeview_sort_column(tree, 0, False)
-        self.statistics.set(f'Number of Columns: {len(data.description)}\nNumber of Rows: {rows_num}')
-
     def on_click(self, event):
         """Mouse click event handler, sorting the column in treeview whenever clicked
 
@@ -227,6 +203,85 @@ class App:
             if self.lastClick is None or self.lastClick != col:
                 self.tree.heading(col, command=lambda: treeview_sort_column(self.tree, col, False))
                 self.lastClick = col
+
+
+def db(db):
+    """Gets db string location  Returns cursor pointing to the database"""
+    conn = sqlite3.connect(db)
+    return conn.cursor()
+
+
+def data(mycursor, query, tree):
+    """importing data from database using given query and add to the tree + sort return statistics string
+
+                Parameters
+                ----------
+                mycursor : cursor
+                    pointer to the database
+                query : String
+                    String representing a query
+                tree: treeview
+                    treeview, ui showing database query results
+
+                Returns
+                -------
+                String
+                    a String that represent number of columns and number of rows imported
+            """
+    for x in tree.get_children():
+        tree.delete(x)
+
+    data_query = mycursor.execute(query)
+    rows = mycursor.fetchall()
+    rows_num = len(rows)
+    param = [i for i in range(1, len(data_query.description) + 1)]
+    tree.configure(columns=param)
+
+    for index, column in enumerate(data_query.description):
+        tree.heading(index + 1, text=column[0])
+        tree.column(index + 1, width=88, stretch=NO)
+
+    for row in rows:
+        tree.insert('', 'end', values=row)
+
+    treeview_sort_column(tree, 0, False)
+    return f'Number of Columns: {len(data_query.description)}\nNumber of Rows: {rows_num}'
+
+
+def create_query(tables, num_of_tables, relation, join_columns):
+    """Gets relationship between tables and selected tables, creating a query and returns it
+
+            Parameters
+            ----------
+            num_of_tables : int
+                number of tables currently picked from the listboxes
+            tables : list(str)
+                list representing all the tables names in the database
+            relation: dictionary
+                dictionary holding the relationship between tables in the database (foreign keys + tables)
+            join_columns: StringVar
+                the string representing the label the show the foreign keys to the user
+
+            Returns
+            -------
+            String
+                a String that represent the query
+        """
+    select_query = f'SELECT *  FROM {tables[0]}'
+    where_query = f' WHERE '
+    join_column = ''
+    for i in range(num_of_tables - 1):
+        if i > 0:
+            where_query += ' AND '
+        join_column += f'Keys:\tTable: {tables[i]}     Column: {relation[tables[i]][tables[i + 1]]}' \
+                       f'\n\tTable: {tables[i + 1]}     Column: {relation[tables[i + 1]][tables[i]]}\n\n'
+        select_query += f', {tables[i + 1]}'
+        where_query += f'{tables[i]}.{relation[tables[i]][tables[i + 1]]} = {tables[i + 1]}.{relation[tables[i + 1]][tables[i]]}'
+    if num_of_tables == 1:
+        where_query = ''
+        join_column = 'Join Columns:\tNone'
+    join_columns.set(join_column)
+    return select_query + where_query
 
 
 def treeview_sort_column(tv, col, reverse):
