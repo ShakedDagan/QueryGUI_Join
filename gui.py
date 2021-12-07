@@ -32,56 +32,57 @@ class App:
         self.root = Tk()
         self.root.geometry("1000x550")
         self.root.title("SQL join query Shaked Dagan")
-        self.root.resizable(0, 0)
-        # self.root.wm_attributes("-topmost", 1)
+        #self.root.resizable(0, 0)
+        self.root.wm_attributes("-topmost", 1)
 
         tables = []  # array for holding all table names
         self.mycursor = db('chinook.db')  # function to connect to the database
         self.relation = dictRelationshipTables(self.mycursor,
                                                tables)  # analyze the database with all the relations (keys,tables)
 
-        self.leftFrame = Frame(self.root)  # divide program into 2 frames left and right
-        self.leftFrame.pack(side="left")
+        #self.bottomFrame = Frame(self.root, width=800)
+        #self.bottomFrame.pack(side="bottom", expand=True, fill="x")
 
-        self.rightFrame = Frame(self.root, width=500, height=500)
-        self.rightFrame.pack(side="right")
+        self.topFrame = Frame(self.root)  # divide program into 2 frames left and right
+        self.topFrame.pack(side="top")
 
-        self.frame_query = Frame(self.rightFrame)  # small frame for query label
-        self.frame_query.pack(side='top')
+        self.frame_query = Frame(self.topFrame)  # small frame for query label
+        self.frame_query.grid(row=0, column=0,columnspan=2)
+        #self.frame_query.pack(side='top')
 
         self.var = StringVar()
         self.label_query = Label(self.frame_query, textvariable=self.var,
-                                 wraplength=450, font=("Arial", 11), pady=10, height=4)
+                                 wraplength=450, font=("Arial", 11), height=5, width=50)
         self.var.set("Query")  # Query label with StringVar
         self.label_query.pack()
 
         self.statistics = StringVar()
         self.statistics.set('Number of Columns: 0\nNumber of Rows: 0')
-        self.label_statistics = Label(self.leftFrame,  # statistics label with StringVar
-                                      textvariable=self.statistics, pady=20, anchor="w", wraplength=250)
-        self.label_statistics.grid(row=2, column=1, sticky='w')
+        self.label_statistics = Label(self.topFrame,  # statistics label with StringVar
+                                      textvariable=self.statistics, anchor="nw", wraplength=250)
+        self.label_statistics.grid(row=1, column=0, sticky='w')
 
         self.join_columns = StringVar()
         self.join_columns.set('Join Columns:\tNone')  # join columns label with StringVar
-        self.join_columns_label = Label(self.leftFrame,
-                                        textvariable=self.join_columns, anchor='n', height=6)
-        self.join_columns_label.grid(row=3, column=0, columnspan=3, rowspan=1, sticky="nswe")
+        self.join_columns_label = Label(self.topFrame,
+                                        textvariable=self.join_columns, height=7, padx=10, width=40, anchor="w")
+        self.join_columns_label.grid(row=1, column=1, sticky="w")
 
-        self.lb1_frame = Frame(self.leftFrame)
-        self.lb1_frame.grid(row=1, column=0, padx=10)  # frame and Listbox for the 1st table pick
-        self.lb1 = Listbox(self.lb1_frame, exportselection=0)
+        self.lb1_frame = Frame(self.topFrame)
+        self.lb1_frame.grid(row=1, column=2, padx=5)  # frame and Listbox for the 1st table pick
+        self.lb1 = Listbox(self.lb1_frame, exportselection=0, width=20)
         for i in range(0, len(tables)):  # inserting to the first listbox all the table names in the DB
             self.lb1.insert(i, tables[i])
         self.lb1.pack(side='left')
 
-        self.lb2_frame = Frame(self.leftFrame)
-        self.lb2_frame.grid(row=1, column=1, padx=10)  # frame and Listbox for the 2nd table pick
-        self.lb2 = Listbox(self.lb2_frame, exportselection=0)
+        self.lb2_frame = Frame(self.topFrame)
+        self.lb2_frame.grid(row=1, column=3, padx=5)  # frame and Listbox for the 2nd table pick
+        self.lb2 = Listbox(self.lb2_frame, exportselection=0, width=20)
         self.lb2.pack(side='left')
 
-        self.lb3_frame = Frame(self.leftFrame)
-        self.lb3_frame.grid(row=1, column=2, padx=10)  # frame and Listbox for the 3rd table pick
-        self.lb3 = Listbox(self.lb3_frame, exportselection=0)
+        self.lb3_frame = Frame(self.topFrame)
+        self.lb3_frame.grid(row=1, column=4, padx=5)  # frame and Listbox for the 3rd table pick
+        self.lb3 = Listbox(self.lb3_frame, exportselection=0, width=20)
         self.lb3.pack(side='left')
 
         vsb_lb1 = ttk.Scrollbar(self.lb1_frame, orient="vertical", command=self.lb1.yview)
@@ -96,18 +97,18 @@ class App:
         vsb_lb3.pack(side='right', fill='y')  # scrollbar to move around the 3rd listbox
         self.lb3.config(yscrollcommand=vsb_lb3.set)
 
-        self.label_table1 = Label(self.leftFrame, text="Table 1", font=("Arial", 11))
-        self.label_table1.grid(row=0, column=0)  # label for the 1st Table
+        self.label_table1 = Label(self.topFrame, text="Table 1", font=("Arial", 11))
+        self.label_table1.grid(row=0, column=2)  # label for the 1st Table
 
-        self.label_table2 = Label(self.leftFrame, text="Table 2", font=("Arial", 11))
-        self.label_table2.grid(row=0, column=1)  # label for the 2nd Table
+        self.label_table2 = Label(self.topFrame, text="Table 2", font=("Arial", 11))
+        self.label_table2.grid(row=0, column=3)  # label for the 2nd Table
 
-        self.label_table3 = Label(self.leftFrame, text="Table 3", font=("Arial", 11))
-        self.label_table3.grid(row=0, column=2)  # label for the 3rd Table
+        self.label_table3 = Label(self.topFrame, text="Table 3", font=("Arial", 11))
+        self.label_table3.grid(row=0, column=4)  # label for the 3rd Table
 
-        self.tree_frame = Frame(self.rightFrame)
+        self.tree_frame = Frame(self.root)
         # pack the frame where the tree will be held to the right frame
-        self.tree_frame.pack(padx=30, pady=15, fill='y')
+        self.tree_frame.pack(side="bottom", padx=30, pady=15, fill='both', expand=True)
         # creating a new tree
         self.tree = ttk.Treeview(self.tree_frame, columns=(1, 2, 3), height=20, show="headings")
 
@@ -119,7 +120,7 @@ class App:
         hsb.pack(side='bottom', fill='x')  # scrollbar for the tree view horizontal
         self.tree.configure(xscrollcommand=hsb.set)
 
-        self.tree.pack(fill='y')  # pack the tree to the frame
+        self.tree.pack(fill='both', expand=True)  # pack the tree to the frame
 
         self.lastClick = '#1'  # representing the last column the user has clicked on (sorting the col in reverse)
         self.tree.bind("<Button-1>", self.on_click)  # event happening on click on the tree view
@@ -141,7 +142,7 @@ class App:
         self.value[0] = w.get(index)
         self.value[1] = None
         self.value[2] = None
-        query = create_query(self.value, 1, self.relation,self.join_columns)
+        query = create_query(self.value, 1, self.relation, self.join_columns)
         self.var.set(query)
         self.statistics.set(data(self.mycursor, query, self.tree))
         self.updateListbox(2, self.relation[self.value[0]])
@@ -235,10 +236,11 @@ def data(mycursor, query, tree):
     rows = mycursor.fetchall()
     rows_num = len(rows)
     param = [i for i in range(1, len(data_query.description) + 1)]
+    print(data_query)
     tree.configure(columns=param)
 
     for index, column in enumerate(data_query.description):
-        tree.heading(index + 1, text=column[0])
+        tree.heading(index + 1, text=column[0], anchor="w")
         tree.column(index + 1, width=88, stretch=NO)
 
     for row in rows:
@@ -273,8 +275,11 @@ def create_query(tables, num_of_tables, relation, join_columns):
     for i in range(num_of_tables - 1):
         if i > 0:
             where_query += ' AND '
-        join_column += f'Keys:\tTable: {tables[i]}     Column: {relation[tables[i]][tables[i + 1]]}' \
-                       f'\n\tTable: {tables[i + 1]}     Column: {relation[tables[i + 1]][tables[i]]}\n\n'
+            join_column += '\n\r\n'
+        #join_column += f'Keys:   Table: {tables[i]}     Column: {relation[tables[i]][tables[i + 1]]}\n' \
+                       #f'\t   Table: {tables[i + 1]}     Column: {relation[tables[i + 1]][tables[i]]}'
+        join_column += 'Keys:   Table: %s     Column: %s\n\tTable: %s     Column: %s'\
+                       % (tables[i], relation[tables[i]][tables[i + 1]], tables[i + 1], relation[tables[i + 1]][tables[i]])
         select_query += f', {tables[i + 1]}'
         where_query += f'{tables[i]}.{relation[tables[i]][tables[i + 1]]} = {tables[i + 1]}.{relation[tables[i + 1]][tables[i]]}'
     if num_of_tables == 1:
