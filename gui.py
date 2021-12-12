@@ -32,7 +32,6 @@ class App:
         self.root = Tk()
         self.root.geometry("1000x550")
         self.root.title("SQL join query Shaked Dagan")
-        #self.root.resizable(0, 0)
         self.root.wm_attributes("-topmost", 1)
 
         tables = []  # array for holding all table names
@@ -40,15 +39,11 @@ class App:
         self.relation = dictRelationshipTables(self.mycursor,
                                                tables)  # analyze the database with all the relations (keys,tables)
 
-        #self.bottomFrame = Frame(self.root, width=800)
-        #self.bottomFrame.pack(side="bottom", expand=True, fill="x")
-
-        self.topFrame = Frame(self.root)  # divide program into 2 frames left and right
+        self.topFrame = Frame(self.root)  # divide program into 2 frames top frame and tree frame(under)
         self.topFrame.pack(side="top")
 
         self.frame_query = Frame(self.topFrame)  # small frame for query label
-        self.frame_query.grid(row=0, column=0,columnspan=2)
-        #self.frame_query.pack(side='top')
+        self.frame_query.grid(row=0, column=0, columnspan=2)
 
         self.var = StringVar()
         self.label_query = Label(self.frame_query, textvariable=self.var,
@@ -107,7 +102,7 @@ class App:
         self.label_table3.grid(row=0, column=4)  # label for the 3rd Table
 
         self.tree_frame = Frame(self.root)
-        # pack the frame where the tree will be held to the right frame
+        # pack the frame where the tree will be held(under top frame)
         self.tree_frame.pack(side="bottom", padx=30, pady=15, fill='both', expand=True)
         # creating a new tree
         self.tree = ttk.Treeview(self.tree_frame, columns=(1, 2, 3), height=20, show="headings")
@@ -236,7 +231,6 @@ def data(mycursor, query, tree):
     rows = mycursor.fetchall()
     rows_num = len(rows)
     param = [i for i in range(1, len(data_query.description) + 1)]
-    print(data_query)
     tree.configure(columns=param)
 
     for index, column in enumerate(data_query.description):
