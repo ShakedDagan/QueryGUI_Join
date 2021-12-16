@@ -2,6 +2,8 @@ import sqlite3
 from tkinter import *
 from tkinter import ttk
 
+# TODO 1.spaces between labels
+
 
 class App:
     """
@@ -38,7 +40,7 @@ class App:
         self.mycursor = db('chinook.db')  # function to connect to the database
         self.relation = dictRelationshipTables(self.mycursor,
                                                tables)  # analyze the database with all the relations (keys,tables)
-
+        self.tables_columns = dictColumnTables(self.mycursor, tables)
         self.topFrame = Frame(self.root)  # divide program into 2 frames top frame and tree frame(under)
         self.topFrame.pack(side="top")
 
@@ -138,8 +140,9 @@ class App:
         self.value[1] = None
         self.value[2] = None
         query = create_query(self.value, 1, self.relation, self.join_columns)
-        self.var.set(query)
-        self.statistics.set(data(self.mycursor, query, self.tree))
+        string_query = query.split("FROM")[0] + '\nFROM' + query.split("FROM")[1]
+        self.var.set(string_query)
+        self.statistics.set(data(self.mycursor, query, self.tree, self.value, self.tables_columns))
         self.updateListbox(2, self.relation[self.value[0]])
         self.updateListbox(3, [])
 
@@ -152,8 +155,11 @@ class App:
         self.value[1] = w.get(index)
         self.value[2] = None
         query = create_query(self.value, 2, self.relation, self.join_columns)
-        self.var.set(query)
-        self.statistics.set(data(self.mycursor, query, self.tree))
+        from_split = query.split("FROM")
+        string_query = from_split[0] + '\nFROM' + from_split[1].split("WHERE")[0] + '\nWHERE' + \
+                       from_split[1].split("WHERE")[1]
+        self.var.set(string_query)
+        self.statistics.set(data(self.mycursor, query, self.tree, self.value, self.tables_columns))
         self.updateListbox(3, self.relation[self.value[1]])
 
     def clickListbox3(self, event):
@@ -164,8 +170,10 @@ class App:
         index = int(w.curselection()[0])
         self.value[2] = w.get(index)
         query = create_query(self.value, 3, self.relation, self.join_columns)
-        self.var.set(query)
-        self.statistics.set(data(self.mycursor, query, self.tree))
+        from_split = query.split("FROM")
+        string_query = from_split[0] + '\nFROM'+from_split[1].split("WHERE")[0] + '\nWHERE' + from_split[1].split("WHERE")[1]
+        self.var.set(string_query)
+        self.statistics.set(data(self.mycursor, query, self.tree, self.value, self.tables_columns))
 
     def updateListbox(self, num, dict_tables):
         """Updating new items in listbox according to the ones who got clicked
@@ -207,7 +215,7 @@ def db(db):
     return conn.cursor()
 
 
-def data(mycursor, query, tree):
+def data(mycursor, query, tree , active_tables, table_columns):
     """importing data from database using given query and add to the tree + sort return statistics string
 
                 Parameters
@@ -233,8 +241,17 @@ def data(mycursor, query, tree):
     param = [i for i in range(1, len(data_query.description) + 1)]
     tree.configure(columns=param)
 
+    count = 0
     for index, column in enumerate(data_query.description):
-        tree.heading(index + 1, text=column[0], anchor="w")
+        if count < len(table_columns[active_tables[0]]):
+            table_name = active_tables[0]
+        elif active_tables[1] is not None and count < (len(table_columns[active_tables[0]]) + len(table_columns[active_tables[1]])):
+            table_name = active_tables[1]
+        else:
+            table_name = active_tables[2]
+        count += 1
+        table_name += f'.{column[0]}'
+        tree.heading(index + 1, text=table_name, anchor="w")
         tree.column(index + 1, width=88, stretch=NO)
 
     for row in rows:
@@ -263,7 +280,7 @@ def create_query(tables, num_of_tables, relation, join_columns):
             String
                 a String that represent the query
         """
-    select_query = f'SELECT *  FROM {tables[0]}'
+    select_query = f'SELECT * FROM {tables[0]}'
     where_query = f' WHERE '
     join_column = ''
     for i in range(num_of_tables - 1):
@@ -308,6 +325,30 @@ def treeview_sort_column(tv, col, reverse):
 
     # reverse sort next time
     tv.heading(col, command=lambda: treeview_sort_column(tv, col, not reverse))
+
+
+def dictColumnTables(mycursor, tables):
+    """Gets and returns dict for each table holding its column names
+
+            Parameters
+            ----------
+            mycursor : cursor
+                The mouse cursor handler
+            tables : list(str)
+                list representing all the tables names in the database
+
+            Returns
+            -------
+            dictionary
+                a dict representing each table as a dict holding its column names
+        """
+    dict_tables = dict()
+    for table in tables:
+        dict_tables[table] = []
+        columns = mycursor.execute(f"pragma table_info({table})")
+        for column in columns.fetchall():
+            dict_tables[table].append(column[1])
+    return dict_tables
 
 
 def dictRelationshipTables(mycursor, tables):
