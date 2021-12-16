@@ -2,8 +2,6 @@ import sqlite3
 from tkinter import *
 from tkinter import ttk
 
-# TODO 1.spaces between labels
-
 
 class App:
     """
@@ -45,7 +43,7 @@ class App:
         self.topFrame.pack(side="top")
 
         self.frame_query = Frame(self.topFrame)  # small frame for query label
-        self.frame_query.grid(row=0, column=0, columnspan=2)
+        self.frame_query.grid(row=0, column=0, columnspan=3)
 
         self.var = StringVar()
         self.label_query = Label(self.frame_query, textvariable=self.var,
@@ -56,29 +54,37 @@ class App:
         self.statistics = StringVar()
         self.statistics.set('Number of Columns: 0\nNumber of Rows: 0')
         self.label_statistics = Label(self.topFrame,  # statistics label with StringVar
-                                      textvariable=self.statistics, anchor="nw", wraplength=250)
-        self.label_statistics.grid(row=1, column=0, sticky='w')
+                                      textvariable=self.statistics, anchor="nw", wraplength=250, justify='left',
+                                      width=20)
+        self.label_statistics.grid(row=1, column=0, sticky='w', padx=20)
+
+        self.join_tables = StringVar()
+        self.join_tables.set('Join Columns:\t')  # join tables label with StringVar
+        self.join_tables_label = Label(self.topFrame,
+                                       textvariable=self.join_tables, height=7, anchor="w", width=17, justify='left')
+        self.join_tables_label.grid(row=1, column=1, sticky="w")
 
         self.join_columns = StringVar()
-        self.join_columns.set('Join Columns:\tNone')  # join columns label with StringVar
+        self.join_columns.set('None')  # join columns label with StringVar
         self.join_columns_label = Label(self.topFrame,
-                                        textvariable=self.join_columns, height=7, padx=10, width=40, anchor="w")
-        self.join_columns_label.grid(row=1, column=1, sticky="w")
+                                        textvariable=self.join_columns, height=7, width=20, anchor="w",
+                                        justify='left')
+        self.join_columns_label.grid(row=1, column=2, sticky="w")
 
         self.lb1_frame = Frame(self.topFrame)
-        self.lb1_frame.grid(row=1, column=2, padx=5)  # frame and Listbox for the 1st table pick
+        self.lb1_frame.grid(row=1, column=3, padx=5)  # frame and Listbox for the 1st table pick
         self.lb1 = Listbox(self.lb1_frame, exportselection=0, width=20)
         for i in range(0, len(tables)):  # inserting to the first listbox all the table names in the DB
             self.lb1.insert(i, tables[i])
         self.lb1.pack(side='left')
 
         self.lb2_frame = Frame(self.topFrame)
-        self.lb2_frame.grid(row=1, column=3, padx=5)  # frame and Listbox for the 2nd table pick
+        self.lb2_frame.grid(row=1, column=4, padx=5)  # frame and Listbox for the 2nd table pick
         self.lb2 = Listbox(self.lb2_frame, exportselection=0, width=20)
         self.lb2.pack(side='left')
 
         self.lb3_frame = Frame(self.topFrame)
-        self.lb3_frame.grid(row=1, column=4, padx=5)  # frame and Listbox for the 3rd table pick
+        self.lb3_frame.grid(row=1, column=5, padx=5)  # frame and Listbox for the 3rd table pick
         self.lb3 = Listbox(self.lb3_frame, exportselection=0, width=20)
         self.lb3.pack(side='left')
 
@@ -95,13 +101,13 @@ class App:
         self.lb3.config(yscrollcommand=vsb_lb3.set)
 
         self.label_table1 = Label(self.topFrame, text="Table 1", font=("Arial", 11))
-        self.label_table1.grid(row=0, column=2)  # label for the 1st Table
+        self.label_table1.grid(row=0, column=3)  # label for the 1st Table
 
         self.label_table2 = Label(self.topFrame, text="Table 2", font=("Arial", 11))
-        self.label_table2.grid(row=0, column=3)  # label for the 2nd Table
+        self.label_table2.grid(row=0, column=4)  # label for the 2nd Table
 
         self.label_table3 = Label(self.topFrame, text="Table 3", font=("Arial", 11))
-        self.label_table3.grid(row=0, column=4)  # label for the 3rd Table
+        self.label_table3.grid(row=0, column=5)  # label for the 3rd Table
 
         self.tree_frame = Frame(self.root)
         # pack the frame where the tree will be held(under top frame)
@@ -139,7 +145,7 @@ class App:
         self.value[0] = w.get(index)
         self.value[1] = None
         self.value[2] = None
-        query = create_query(self.value, 1, self.relation, self.join_columns)
+        query = create_query(self.value, 1, self.relation, self.join_columns, self.join_tables)
         string_query = query.split("FROM")[0] + '\nFROM' + query.split("FROM")[1]
         self.var.set(string_query)
         self.statistics.set(data(self.mycursor, query, self.tree, self.value, self.tables_columns))
@@ -154,7 +160,7 @@ class App:
         index = int(w.curselection()[0])
         self.value[1] = w.get(index)
         self.value[2] = None
-        query = create_query(self.value, 2, self.relation, self.join_columns)
+        query = create_query(self.value, 2, self.relation, self.join_columns, self.join_tables)
         from_split = query.split("FROM")
         string_query = from_split[0] + '\nFROM' + from_split[1].split("WHERE")[0] + '\nWHERE' + \
                        from_split[1].split("WHERE")[1]
@@ -169,9 +175,10 @@ class App:
         w = event.widget
         index = int(w.curselection()[0])
         self.value[2] = w.get(index)
-        query = create_query(self.value, 3, self.relation, self.join_columns)
+        query = create_query(self.value, 3, self.relation, self.join_columns, self.join_tables)
         from_split = query.split("FROM")
-        string_query = from_split[0] + '\nFROM'+from_split[1].split("WHERE")[0] + '\nWHERE' + from_split[1].split("WHERE")[1]
+        string_query = from_split[0] + '\nFROM' + from_split[1].split("WHERE")[0] + '\nWHERE' + \
+                       from_split[1].split("WHERE")[1]
         self.var.set(string_query)
         self.statistics.set(data(self.mycursor, query, self.tree, self.value, self.tables_columns))
 
@@ -215,7 +222,7 @@ def db(db):
     return conn.cursor()
 
 
-def data(mycursor, query, tree , active_tables, table_columns):
+def data(mycursor, query, tree, active_tables, table_columns):
     """importing data from database using given query and add to the tree + sort return statistics string
 
                 Parameters
@@ -226,6 +233,10 @@ def data(mycursor, query, tree , active_tables, table_columns):
                     String representing a query
                 tree: treeview
                     treeview, ui showing database query results
+                active_tables: list
+                    list of tables in current query
+                table_columns: dictionary
+                    dict of tables and their column names
 
                 Returns
                 -------
@@ -245,7 +256,8 @@ def data(mycursor, query, tree , active_tables, table_columns):
     for index, column in enumerate(data_query.description):
         if count < len(table_columns[active_tables[0]]):
             table_name = active_tables[0]
-        elif active_tables[1] is not None and count < (len(table_columns[active_tables[0]]) + len(table_columns[active_tables[1]])):
+        elif active_tables[1] is not None and count < (
+                len(table_columns[active_tables[0]]) + len(table_columns[active_tables[1]])):
             table_name = active_tables[1]
         else:
             table_name = active_tables[2]
@@ -261,7 +273,7 @@ def data(mycursor, query, tree , active_tables, table_columns):
     return f'Number of Columns: {len(data_query.description)}\nNumber of Rows: {rows_num}'
 
 
-def create_query(tables, num_of_tables, relation, join_columns):
+def create_query(tables, num_of_tables, relation, join_columns, join_tables):
     """Gets relationship between tables and selected tables, creating a query and returns it
 
             Parameters
@@ -272,6 +284,8 @@ def create_query(tables, num_of_tables, relation, join_columns):
                 list representing all the tables names in the database
             relation: dictionary
                 dictionary holding the relationship between tables in the database (foreign keys + tables)
+            join_tables: StringVar
+                the string representing the label the show the foreign keys to the user
             join_columns: StringVar
                 the string representing the label the show the foreign keys to the user
 
@@ -283,19 +297,23 @@ def create_query(tables, num_of_tables, relation, join_columns):
     select_query = f'SELECT * FROM {tables[0]}'
     where_query = f' WHERE '
     join_column = ''
+    join_table = ''
     for i in range(num_of_tables - 1):
         if i > 0:
             where_query += ' AND '
-            join_column += '\n\r\n'
-        #join_column += f'Keys:   Table: {tables[i]}     Column: {relation[tables[i]][tables[i + 1]]}\n' \
-                       #f'\t   Table: {tables[i + 1]}     Column: {relation[tables[i + 1]][tables[i]]}'
-        join_column += 'Keys:   Table: %s     Column: %s\n\tTable: %s     Column: %s'\
-                       % (tables[i], relation[tables[i]][tables[i + 1]], tables[i + 1], relation[tables[i + 1]][tables[i]])
+            join_column += '\n\n'
+            join_table += '\n\n'
+
+        join_table += f'Table: {tables[i]:<16}\nTable: {tables[i + 1]:<16}'
+        join_column += f'Column: {relation[tables[i]][tables[i + 1]]}\n' \
+                       f'Column: {relation[tables[i + 1]][tables[i]]}'
         select_query += f', {tables[i + 1]}'
         where_query += f'{tables[i]}.{relation[tables[i]][tables[i + 1]]} = {tables[i + 1]}.{relation[tables[i + 1]][tables[i]]}'
     if num_of_tables == 1:
         where_query = ''
-        join_column = 'Join Columns:\tNone'
+        join_table = 'Join Columns:\t'
+        join_column = 'None'
+    join_tables.set(join_table)
     join_columns.set(join_column)
     return select_query + where_query
 
